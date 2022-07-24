@@ -1,0 +1,19 @@
+modLoader="javafml"
+loaderVersion="[41,)"
+license="Mozilla Public License 2"
+[[mods]]
+modId="arrp"
+version="${version}"
+displayName="Ws"
+logoFile="assets/arrp/icon.png"
+authors="Tfarecnim,HalfOf2, Trinsdar"
+description='''
+a mod that allows mods to generate assets/data on the fly
+'''
+[[dependencies.arrp]]
+modId="minecraft"
+mandatory=true
+# This version range declares a minimum of the current minecraft version up to but not including the next major version
+versionRange="[1.19,1.20)"
+ordering="NONE"
+side="BOTH"

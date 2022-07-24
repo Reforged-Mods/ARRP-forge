@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import net.devtech.arrp.ARRP;
-import net.devtech.arrp.api.RRPCallback;
+import net.devtech.arrp.api.RRPEvent;
+import net.devtech.arrp.api.RuntimeResourcePack;
+import net.devtech.arrp.util.IrremovableList;
+import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,18 +25,26 @@ public abstract class LifecycledResourceManagerImplMixin {
 			at = @At (value = "HEAD"),
 			argsOnly = true)
 	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
-		ARRP.waitForPregen();
+		//ARRP.waitForPregen();
 
 		ARRP_LOGGER.info("ARRP register - before vanilla");
-		List<ResourcePack> before = new ArrayList<>();
-		RRPCallback.BEFORE_VANILLA.invoker().insert(before);
-
+		IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(), pack -> {
+			if (pack instanceof RuntimeResourcePack) {
+				((RuntimeResourcePack) pack).dump();
+			}
+		});
+		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(before);
+		MinecraftForge.EVENT_BUS.post(beforeVanilla);
 		before.addAll(packs);
 
 		ARRP_LOGGER.info("ARRP register - after vanilla");
-		List<ResourcePack> after = new ArrayList<>();
-		RRPCallback.AFTER_VANILLA.invoker().insert(after);
-
+		List<ResourcePack> after = new IrremovableList<>(new ArrayList<>(), pack -> {
+			if (pack instanceof RuntimeResourcePack) {
+				((RuntimeResourcePack) pack).dump();
+			}
+		});
+		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(after);
+		MinecraftForge.EVENT_BUS.post(afterVanilla);
 		before.addAll(after);
 
 

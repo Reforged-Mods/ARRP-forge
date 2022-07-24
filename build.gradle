@@ -1,7 +1,13 @@
 plugins {
-    id 'fabric-loom' version '0.11-SNAPSHOT'
+    id "dev.architectury.loom" version "0.12.0-SNAPSHOT"
     id 'maven-publish'
     id "me.shedaniel.unified-publishing" version "0.1.+"
+}
+
+loom {
+    forge{
+        mixinConfigs = ["arrp.mixins.json"]
+    }
 }
 
 sourceCompatibility = JavaVersion.VERSION_17
@@ -14,14 +20,13 @@ group = project.maven_group
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation include(fabricApi.module('fabric-api-base', project.fabric_version))
+    forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
 }
 
 processResources {
     inputs.property "version", project.version
 
-    filesMatching("fabric.mod.json") {
+    filesMatching("META-INF/mods.toml") {
         expand "version": project.version
     }
 }
@@ -63,6 +68,7 @@ publishing {
     }
 }
 
+/*
 File file = file("tokens.properties")
 if(file.exists()) {
     Properties properties = new Properties()
@@ -73,7 +79,7 @@ if(file.exists()) {
     unifiedPublishing {
         project {
             gameVersions = ["1.19"]
-            gameLoaders = ["fabric"]
+            gameLoaders = ["forge"]
 
             mainPublication tasks.remapJar // Declares the publicated jar
 
@@ -94,4 +100,4 @@ if(file.exists()) {
             }
         }
     }
-}
+}*/

@@ -35,7 +35,7 @@ import net.minecraft.util.Identifier;
  * a resource pack who's assets and data are evaluated at runtime
  *
  * remember to register it!
- * @see RRPCallback
+ * @see RRPEvent
  */
 public interface RuntimeResourcePack extends ResourcePack {
 	/**
