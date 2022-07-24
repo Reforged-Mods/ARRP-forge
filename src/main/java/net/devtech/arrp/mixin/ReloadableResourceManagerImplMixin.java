@@ -2,7 +2,9 @@ package net.devtech.arrp.mixin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 import net.devtech.arrp.api.RRPEvent;
 import net.devtech.arrp.api.RuntimeResourcePack;
@@ -14,17 +16,20 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import net.minecraft.resource.LifecycledResourceManagerImpl;
+import net.minecraft.resource.ReloadableResourceManagerImpl;
 import net.minecraft.resource.ResourcePack;
+import net.minecraft.util.Unit;
 
-@Mixin (LifecycledResourceManagerImpl.class)
-public abstract class LifecycledResourceManagerImplMixin {
+@Mixin (ReloadableResourceManagerImpl.class)
+public abstract class ReloadableResourceManagerImplMixin {
 	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/ReloadableResourceManagerImplMixin");
 
-	@ModifyVariable(method = "<init>",
-			at = @At (value = "HEAD"),
-			argsOnly = true)
-	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
+	@ModifyVariable(method = "reload",
+			at = @At (value = "HEAD"), argsOnly = true)
+	private List<ResourcePack> registerARRPs(List<ResourcePack> packs, Executor prepareExecutor,
+			Executor applyExecutor,
+			CompletableFuture<Unit> initialStage,
+			List<ResourcePack> packs0) throws ExecutionException, InterruptedException {
 		//ARRP.waitForPregen();
 
 		ARRP_LOGGER.info("ARRP register - before vanilla");
