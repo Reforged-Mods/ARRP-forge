@@ -32,7 +32,7 @@ public abstract class LifecycledResourceManagerImplMixin {
 	@ModifyVariable(method = "<init>",
 			at = @At (value = "HEAD"),
 			argsOnly = true)
-	private List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
+	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
 		//ARRP.waitForPregen();
 
 		if (FMLEnvironment.dist.isClient() && !LOADED){
