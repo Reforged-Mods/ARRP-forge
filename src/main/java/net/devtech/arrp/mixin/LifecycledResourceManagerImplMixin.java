@@ -26,7 +26,7 @@ import net.minecraft.util.Unit;
 @Mixin (LifecycledResourceManagerImpl.class)
 public abstract class LifecycledResourceManagerImplMixin {
 
-	private static boolean LOADED = false;
+	private static int LOADED_TIMES = 0;
 	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/LifecycledResourceManagerImplMixin");
 
 	@ModifyVariable(method = "<init>",
@@ -34,11 +34,10 @@ public abstract class LifecycledResourceManagerImplMixin {
 			argsOnly = true)
 	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
 		//ARRP.waitForPregen();
-
-		if (FMLEnvironment.dist.isClient() && !LOADED){
+		if (FMLEnvironment.dist.isClient() && LOADED_TIMES == 1){
 			ModLoader.get().postEvent(new RRPInitEvent());
-			LOADED = true;
 		}
+		LOADED_TIMES++;
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(), pack -> {
 			if (pack instanceof RuntimeResourcePack) {
