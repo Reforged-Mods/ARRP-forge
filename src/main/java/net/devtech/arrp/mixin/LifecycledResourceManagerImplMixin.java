@@ -12,12 +12,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.resource.LifecycledResourceManagerImpl;
 import net.minecraft.resource.ResourcePack;
+import net.minecraft.resource.ResourceType;
 
-@Mixin (LifecycledResourceManagerImpl.class)
+@Mixin(LifecycledResourceManagerImpl.class)
 public abstract class LifecycledResourceManagerImplMixin {
 	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/ReloadableResourceManagerImplMixin");
 
@@ -50,4 +53,3 @@ public abstract class LifecycledResourceManagerImplMixin {
 
 		return before;
 	}
-}
