@@ -37,11 +37,6 @@ public abstract class ReloadableResourceManagerImplMixin {
                                              CompletableFuture<Unit> initialStage,
                                              List<ResourcePack> packs0) throws ExecutionException, InterruptedException {
         //ARRP.waitForPregen();
-
-        if (FMLEnvironment.dist.isClient() && !LOADED){
-            ModLoader.get().postEvent(new RRPInitEvent());
-            LOADED = true;
-        }
         ARRP_LOGGER.info("ARRP register - before vanilla");
         IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(), pack -> {
             if (pack instanceof RuntimeResourcePack) {
@@ -52,6 +47,10 @@ public abstract class ReloadableResourceManagerImplMixin {
         MinecraftForge.EVENT_BUS.post(beforeVanilla);
         before.addAll(packs);
 
+        if (FMLEnvironment.dist.isClient() && !LOADED){
+            ModLoader.get().postEvent(new RRPInitEvent());
+            LOADED = true;
+        }
         ARRP_LOGGER.info("ARRP register - after vanilla");
         List<ResourcePack> after = new IrremovableList<>(new ArrayList<>(), pack -> {
             if (pack instanceof RuntimeResourcePack) {
