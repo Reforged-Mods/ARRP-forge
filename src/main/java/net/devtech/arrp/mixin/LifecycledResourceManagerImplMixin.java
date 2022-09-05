@@ -34,10 +34,7 @@ public abstract class LifecycledResourceManagerImplMixin {
 			argsOnly = true)
 	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
 		//ARRP.waitForPregen();
-		if (FMLEnvironment.dist.isClient() && LOADED_TIMES == 1){
-			ModLoader.get().postEvent(new RRPInitEvent());
-		}
-		LOADED_TIMES++;
+
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(), pack -> {
 			if (pack instanceof RuntimeResourcePack) {
