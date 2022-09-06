@@ -26,8 +26,6 @@ import net.minecraft.util.Unit;
 
 @Mixin (ReloadableResourceManagerImpl.class)
 public abstract class ReloadableResourceManagerImplMixin {
-
-    private static boolean LOADED = false;
     private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/ReloadableResourceManagerImplMixin");
 
     @ModifyVariable(method = "reload",
@@ -46,11 +44,6 @@ public abstract class ReloadableResourceManagerImplMixin {
         RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(before);
         MinecraftForge.EVENT_BUS.post(beforeVanilla);
         before.addAll(packs);
-
-        if (FMLEnvironment.dist.isClient() && !LOADED){
-            ModLoader.get().postEvent(new RRPInitEvent());
-            LOADED = true;
-        }
         ARRP_LOGGER.info("ARRP register - after vanilla");
         List<ResourcePack> after = new IrremovableList<>(new ArrayList<>(), pack -> {
             if (pack instanceof RuntimeResourcePack) {

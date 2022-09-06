@@ -5,7 +5,12 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import net.devtech.arrp.api.RRPInitEvent;
+import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
+import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,6 +21,7 @@ public class ARRP {
 
 	public ARRP(){
 		LOGGER.info("I used the json to destroy the json");
+		FMLJavaModLoadingContext.get().getModEventBus().addListener(this::particleFactoryRegister);
 	}
 
 	public void onPreLaunch() {
@@ -33,6 +39,13 @@ public class ARRP {
 				future.get();
 			}
 			futures = null;
+		}
+	}
+
+
+	private void particleFactoryRegister(ParticleFactoryRegisterEvent event){
+		if (FMLEnvironment.dist.isClient()){
+			ModLoader.get().postEvent(new RRPInitEvent());
 		}
 	}
 }
