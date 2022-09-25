@@ -42,7 +42,7 @@ public abstract class LifecycledResourceManagerImplMixin {
 			}
 		});
 		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(before);
-		MinecraftForge.EVENT_BUS.post(beforeVanilla);
+		ModLoader.get().postEvent(beforeVanilla);
 		before.addAll(packs);
 
 		ARRP_LOGGER.info("ARRP register - after vanilla");
@@ -52,7 +52,7 @@ public abstract class LifecycledResourceManagerImplMixin {
 			}
 		});
 		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(after);
-		MinecraftForge.EVENT_BUS.post(afterVanilla);
+		ModLoader.get().postEvent(afterVanilla);
 		before.addAll(after);
 
 

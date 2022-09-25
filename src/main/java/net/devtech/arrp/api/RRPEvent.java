@@ -2,11 +2,12 @@ package net.devtech.arrp.api;
 
 import net.minecraft.resource.ResourcePack;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.event.IModBusEvent;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class RRPEvent extends Event {
+public class RRPEvent extends Event implements IModBusEvent {
     private final List<ResourcePack> runTimeResourcePacks;
 
     public RRPEvent(List<ResourcePack> pack) {
