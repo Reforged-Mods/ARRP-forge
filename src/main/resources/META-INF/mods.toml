@@ -5,7 +5,7 @@ license="Mozilla Public License 2"
 modId="arrp"
 version="${version}"
 displayName="Runtime Resource Pack Forge"
-logoFile="assets/arrp/icon.png"
+logoFile="icon.png"
 authors="Tfarecnim,HalfOf2, Trinsdar"
 description='''
 a mod that allows mods to generate assets/data on the fly
