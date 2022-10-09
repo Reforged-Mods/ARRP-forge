@@ -4,7 +4,7 @@ license="Mozilla Public License 2"
 [[mods]]
 modId="arrp"
 version="${version}"
-displayName="Ws"
+displayName="Runtime Resource Pack Forge"
 logoFile="assets/arrp/icon.png"
 authors="Tfarecnim,HalfOf2, Trinsdar"
 description='''
