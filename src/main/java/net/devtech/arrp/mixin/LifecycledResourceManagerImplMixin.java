@@ -18,44 +18,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.minecraft.resource.ResourcePack;
-import net.minecraft.util.Unit;
+import net.minecraft.resource.ResourceType;
 
-@Mixin (LifecycledResourceManagerImpl.class)
+@Mixin(LifecycledResourceManagerImpl.class)
 public abstract class LifecycledResourceManagerImplMixin {
-
-	private static int LOADED_TIMES = 0;
-	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/LifecycledResourceManagerImplMixin");
-
-	@ModifyVariable(method = "<init>",
-			at = @At (value = "HEAD"),
-			argsOnly = true)
-	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs) throws ExecutionException, InterruptedException {
-		//ARRP.waitForPregen();
-
+	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/ReloadableResourceManagerImplMixin");
+	
+	@ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true)
+	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs, ResourceType type, List<ResourcePack> packs0) throws ExecutionException, InterruptedException {
+		List<ResourcePack> copy = new ArrayList<>(packs);
+		ARRP.waitForPregen();
 		ARRP_LOGGER.info("ARRP register - before vanilla");
-		IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(), pack -> {
-			if (pack instanceof RuntimeResourcePack) {
-				((RuntimeResourcePack) pack).dump();
-			}
-		});
-		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(before);
-		ModLoader.get().postEvent(beforeVanilla);
-		before.addAll(packs);
-
+		SidedRRPCallback.BEFORE_VANILLA.invoker().insert(type, Lists.reverse(copy));
+		
 		ARRP_LOGGER.info("ARRP register - after vanilla");
-		List<ResourcePack> after = new IrremovableList<>(new ArrayList<>(), pack -> {
-			if (pack instanceof RuntimeResourcePack) {
-				((RuntimeResourcePack) pack).dump();
-			}
-		});
-		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(after);
-		ModLoader.get().postEvent(afterVanilla);
-		before.addAll(after);
-
-
-		return before;
+		SidedRRPCallback.AFTER_VANILLA.invoker().insert(type, copy);
+		return copy;
 	}
-}

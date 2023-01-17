@@ -55,22 +55,36 @@ import net.devtech.arrp.json.loot.JLootTable;
 import net.devtech.arrp.json.loot.JPool;
 import net.devtech.arrp.json.models.JModel;
 import net.devtech.arrp.json.models.JTextures;
-import net.devtech.arrp.json.recipe.JIngredient;
-import net.devtech.arrp.json.recipe.JIngredients;
-import net.devtech.arrp.json.recipe.JKeys;
-import net.devtech.arrp.json.recipe.JPattern;
-import net.devtech.arrp.json.recipe.JRecipe;
+import net.devtech.arrp.json.recipe.*;
 import net.devtech.arrp.json.tags.JTag;
 import net.devtech.arrp.util.CallableFunction;
 import net.devtech.arrp.util.CountingInputStream;
 import net.devtech.arrp.util.UnsafeByteArrayOutputStream;
-import org.apache.logging.log4j.LogManager;
-import org.jetbrains.annotations.ApiStatus;
-
 import net.minecraft.resource.ResourcePack;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
 import net.minecraft.util.Identifier;
+import org.apache.logging.log4j.LogManager;
+import org.jetbrains.annotations.ApiStatus;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.*;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+import static java.lang.String.valueOf;
 
 
 /**
@@ -141,7 +155,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	private final Lock waiting = new ReentrantLock();
 	private final Map<Identifier, Supplier<byte[]>> data = new ConcurrentHashMap<>();
 	private final Map<Identifier, Supplier<byte[]>> assets = new ConcurrentHashMap<>();
-	private final Map<String, Supplier<byte[]>> root = new ConcurrentHashMap<>();
+	private final Map<List<String>, Supplier<byte[]>> root = new ConcurrentHashMap<>();
 	private final Map<Identifier, JLang> langMergable = new ConcurrentHashMap<>();
 
 	public RuntimeResourcePackImpl(Identifier id) {
@@ -189,8 +203,9 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		this.langMergable.compute(identifier, (identifier1, lang1) -> {
 			if(lang1 == null) {
 				lang1 = new JLang();
+				JLang finalLang = lang1;
 				this.addLazyResource(ResourceType.CLIENT_RESOURCES, identifier, (pack, identifier2) -> {
-					return pack.addLang(identifier, lang);
+					return pack.addLang(identifier, finalLang);
 				});
 			}
 			lang1.getLang().putAll(lang.getLang());
@@ -231,7 +246,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	@Override
 	public Future<byte[]> addAsyncRootResource(String path, CallableFunction<String, byte[]> data) {
 		Future<byte[]> future = EXECUTOR_SERVICE.submit(() -> data.get(path));
-		this.root.put(path, () -> {
+		this.root.put(Arrays.asList(path.split("/")), () -> {
 			try {
 				return future.get();
 			} catch(InterruptedException | ExecutionException e) {
@@ -243,12 +258,12 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 
 	@Override
 	public void addLazyRootResource(String path, BiFunction<RuntimeResourcePack, String, byte[]> data) {
-		this.root.put(path, new Memoized<>(data, path));
+		this.root.put(Arrays.asList(path.split("/")), new Memoized<>(data, path));
 	}
 
 	@Override
 	public byte[] addRootResource(String path, byte[] data) {
-		this.root.put(path, () -> data);
+		this.root.put(Arrays.asList(path.split("/")), () -> data);
 		return data;
 	}
 
@@ -312,8 +327,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		LOGGER.info("dumping " + this.id + "'s assets and data");
 		// data dump time
 		try {
-			for(Map.Entry<String, Supplier<byte[]>> e : this.root.entrySet()) {
-				Path root = output.resolve(e.getKey());
+			for(Map.Entry<List<String>, Supplier<byte[]>> e : this.root.entrySet()) {
+				Path root = output.resolve(String.join("/", e.getKey()));
 				Files.createDirectories(root.getParent());
 				Files.write(root, e.getValue().get());
 			}
@@ -347,7 +362,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 				this.load(path, this.data, Files.readAllBytes(file));
 			} else {
 				byte[] data = Files.readAllBytes(file);
-				this.root.put(s, () -> data);
+				this.root.put(Arrays.asList(s.split("/")), () -> data);
 			}
 		}
 	}
@@ -360,8 +375,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	@Override
 	public void dump(ZipOutputStream zos) throws IOException {
 		this.lock();
-		for(Map.Entry<String, Supplier<byte[]>> entry : this.root.entrySet()) {
-			zos.putNextEntry(new ZipEntry(entry.getKey()));
+		for(Map.Entry<List<String>, Supplier<byte[]>> entry : this.root.entrySet()) {
+			zos.putNextEntry(new ZipEntry(String.join("/", entry.getKey())));
 			zos.write(entry.getValue().get());
 			zos.closeEntry();
 		}
@@ -395,7 +410,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 				this.load(path, this.data, this.read(entry, stream));
 			} else {
 				byte[] data = this.read(entry, stream);
-				this.root.put(s, () -> data);
+				this.root.put(Arrays.asList(s.split("/")), () -> data);
 			}
 		}
 	}
@@ -481,7 +496,9 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 			object.addProperty("description", "runtime resource pack");
 			return metaReader.fromJson(object);
 		}
-		LOGGER.info("'" + metaReader.getKey() + "' is an unsupported metadata key!");
+		if(KEY_WARNINGS.add(metaReader.getKey())) {
+			LOGGER.info("'" + metaReader.getKey() + "' is an unsupported metadata key");
+		}
 		return metaReader.fromJson(new JsonObject());
 	}
 

@@ -1,16 +1,15 @@
 package net.devtech.arrp.json.recipe;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
 import net.minecraft.item.Item;
 import net.minecraft.util.registry.Registry;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JIngredient implements Cloneable {
 	protected String item;
