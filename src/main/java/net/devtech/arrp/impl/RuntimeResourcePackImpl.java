@@ -117,6 +117,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 									 .registerTypeAdapter(Identifier.class, new Identifier.Serializer())
 									 .registerTypeAdapter(JCondition.class, new JCondition.Serializer())
 									 .create();
+	// if it works, don't touch it
+	static final Set<String> KEY_WARNINGS = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	// @formatter:on
 	private static final org.apache.logging.log4j.Logger LOGGER = LogManager.getLogger("RRP");
 

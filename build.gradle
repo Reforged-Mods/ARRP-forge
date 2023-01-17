@@ -37,23 +37,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-
     withSourcesJar()
 }
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
-}
-
-processResources {
-    inputs.property("version", project.version)
-
-    filesMatching("fabric.mod.json") {
-        expand("version": project.version)
-    }
 }
 
 jar {
@@ -71,18 +59,14 @@ publishing {
 
     repositories {
         maven {
-            name = "Project"
-            url = uri("${buildDir}/repo")
-        }
-
-        maven {
-            credentials {
-                username = ""
-                password = System.getenv("MODMAVEN")
+            def mavenUrl = project.hasProperty('maven_url') ? project.property('maven_url') : ""
+            url mavenUrl
+            if (mavenUrl.startsWith("http")) {
+                credentials {
+                    username project.hasProperty('maven_username') ? project.property('maven_username') : ""
+                    password project.hasProperty('maven_password') ? project.property('maven_password') : ""
+                }
             }
-
-            name = "Modmaven"
-            url = "https://modmaven.dev/artifactory/local-releases/"
         }
     }
 }
