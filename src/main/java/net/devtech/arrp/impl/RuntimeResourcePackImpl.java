@@ -60,6 +60,7 @@ import net.devtech.arrp.json.tags.JTag;
 import net.devtech.arrp.util.CallableFunction;
 import net.devtech.arrp.util.CountingInputStream;
 import net.devtech.arrp.util.UnsafeByteArrayOutputStream;
+import net.minecraft.resource.AbstractFileResourcePack;
 import net.minecraft.resource.ResourcePack;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
@@ -458,11 +459,11 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public Collection<Identifier> findResources(ResourceType type, String namespace, String prefix, int maxDepth, Predicate<String> pathFilter) {
+	public Collection<Identifier> findResources(ResourceType type, String namespace, String prefix, Predicate<Identifier> pathFilter) {
 		this.lock();
 		Set<Identifier> identifiers = new HashSet<>();
 		for(Identifier identifier : this.getSys(type).keySet()) {
-			if(identifier.getNamespace().equals(namespace) && identifier.getPath().startsWith(prefix) && pathFilter.test(identifier.getPath())) {
+			if(identifier.getNamespace().equals(namespace) && identifier.getPath().startsWith(prefix) && pathFilter.test(identifier)) {
 				identifiers.add(identifier);
 			}
 		}
@@ -492,16 +493,21 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	// if it works, don't touch it
 	@Override
 	public <T> T parseMetadata(ResourceMetadataReader<T> metaReader) {
-		if(metaReader.getKey().equals("pack")) {
-			JsonObject object = new JsonObject();
-			object.addProperty("pack_format", this.packVersion);
-			object.addProperty("description", "runtime resource pack");
-			return metaReader.fromJson(object);
+		InputStream stream = this.openRoot("pack.mcmeta");
+		if(stream != null) {
+			return AbstractFileResourcePack.parseMetadata(metaReader, stream);
+		} else {
+			if(metaReader.getKey().equals("pack")) {
+				JsonObject object = new JsonObject();
+				object.addProperty("pack_format", this.packVersion);
+				object.addProperty("description", "runtime resource pack");
+				return metaReader.fromJson(object);
+			}
+			if(KEY_WARNINGS.add(metaReader.getKey())) {
+				LOGGER.info("'" + metaReader.getKey() + "' is an unsupported metadata key");
+			}
+			return null;
 		}
-		if(KEY_WARNINGS.add(metaReader.getKey())) {
-			LOGGER.info("'" + metaReader.getKey() + "' is an unsupported metadata key");
-		}
-		return metaReader.fromJson(new JsonObject());
 	}
 
 	@Override
