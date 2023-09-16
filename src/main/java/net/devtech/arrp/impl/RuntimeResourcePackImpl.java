@@ -61,6 +61,7 @@ import net.devtech.arrp.util.CallableFunction;
 import net.devtech.arrp.util.CountingInputStream;
 import net.devtech.arrp.util.UnsafeByteArrayOutputStream;
 import net.minecraft.resource.AbstractFileResourcePack;
+import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourcePack;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
@@ -148,9 +149,14 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 				ex.printStackTrace();
 			}
 		}
-		EXECUTOR_SERVICE = Executors.newFixedThreadPool(processors, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ARRP-Workers-%s").build());
+		EXECUTOR_SERVICE = Executors.newFixedThreadPool(
+				processors,
+				new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ARRP-Workers-%s").build()
+		);
 		DUMP = dump;
 		DEBUG_PERFORMANCE = performance;
+		KEY_WARNINGS.add("filter");
+		KEY_WARNINGS.add("language");
 	}
 
 	public final int packVersion;
@@ -430,23 +436,19 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	 * @return the pack.png image as a stream
 	 */
 	@Override
-	public InputStream openRoot(String fileName) {
-		if(!fileName.contains("/") && !fileName.contains("\\")) {
-			this.lock();
-			Supplier<byte[]> supplier = this.root.get(fileName);
-			if(supplier == null) {
-				this.waiting.unlock();
-				return null;
-			}
+	public InputSupplier<InputStream> openRoot(String... segments) {
+		this.lock();
+		Supplier<byte[]> supplier = this.root.get(Arrays.asList(segments));
+		if(supplier == null) {
 			this.waiting.unlock();
-			return new ByteArrayInputStream(supplier.get());
-		} else {
-			throw new IllegalArgumentException("File name can't be a path");
+			return null;
 		}
+		this.waiting.unlock();
+		return () -> new ByteArrayInputStream(supplier.get());
 	}
 
 	@Override
-	public InputStream open(ResourceType type, Identifier id) {
+	public InputSupplier<InputStream> open(ResourceType type, Identifier id) {
 		this.lock();
 		Supplier<byte[]> supplier = this.getSys(type).get(id);
 		if(supplier == null) {
@@ -455,13 +457,13 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 			return null;
 		}
 		this.waiting.unlock();
-		return new ByteArrayInputStream(supplier.get());
+		return () -> new ByteArrayInputStream(supplier.get());
 	}
 
 	@Override
-	public Collection<Identifier> findResources(ResourceType type, String namespace, String prefix, Predicate<Identifier> pathFilter) {
+	public void findResources(
+			ResourceType type, String namespace, String prefix, ResultConsumer consumer) {
 		this.lock();
-		Set<Identifier> identifiers = new HashSet<>();
 		for(Identifier identifier : this.getSys(type).keySet()) {
 			Supplier<byte[]> supplier = this.getSys(type).get(identifier);
 			if(supplier == null) {
@@ -469,17 +471,12 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 				this.waiting.unlock();
 				continue;
 			}
+			InputSupplier<InputStream> inputSupplier = () -> new ByteArrayInputStream(supplier.get());
+			if(identifier.getNamespace().equals(namespace) && identifier.getPath().startsWith(prefix)) {
+				consumer.accept(identifier, inputSupplier);
+			}
 		}
 		this.waiting.unlock();
-		return identifiers;
-	}
-
-	@Override
-	public boolean contains(ResourceType type, Identifier id) {
-		this.lock();
-		boolean contains = this.getSys(type).containsKey(id);
-		this.waiting.unlock();
-		return contains;
 	}
 
 	@Override
@@ -496,7 +493,15 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	// if it works, don't touch it
 	@Override
 	public <T> T parseMetadata(ResourceMetadataReader<T> metaReader) {
-		InputStream stream = this.openRoot("pack.mcmeta");
+		InputStream stream = null;
+		try {
+			InputSupplier<InputStream> supplier = this.openRoot("pack.mcmeta");
+			if (supplier != null) {
+				stream = supplier.get();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 		if(stream != null) {
 			return AbstractFileResourcePack.parseMetadata(metaReader, stream);
 		} else {

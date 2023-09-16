@@ -2,46 +2,58 @@ package net.devtech.arrp.mixin;
 
 import net.devtech.arrp.ARRP;
 import net.devtech.arrp.api.RRPEvent;
-import net.devtech.arrp.api.RuntimeResourcePack;
-import net.devtech.arrp.util.IrremovableList;
 import net.minecraft.resource.*;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraftforge.fml.ModLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 @Mixin(FileResourcePackProvider.class)
 public class FileResourcePackProviderMixin {
-	private static final ResourcePackSource RUNTIME = ResourcePackSource.nameAndSource("pack.source.runtime");
+	@Shadow
+	@Final
+	private ResourceType type;
+	private static final ResourcePackSource RUNTIME = ResourcePackSource.create(getSourceTextSupplier(), true);
 	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/FileResourcePackProviderMixin");
 
+	private static UnaryOperator<Text> getSourceTextSupplier() {
+		Text text = Text.translatable("pack.source.runtime");
+		return name -> Text.translatable("pack.nameAndSource", name, text).formatted(Formatting.GRAY);
+	}
+
 	@Inject(method = "register", at = @At("HEAD"))
-	public void register(Consumer<ResourcePackProfile> adder, ResourcePackProfile.Factory factory, CallbackInfo ci) throws ExecutionException, InterruptedException {
-		List<ResourcePack> list = new IrremovableList<>(new ArrayList<>(), pack -> {
-			if (pack instanceof RuntimeResourcePack) {
-				((RuntimeResourcePack) pack).dump();
-			}
-		});
+	public void register(
+			Consumer<ResourcePackProfile> adder,
+			CallbackInfo ci
+	) throws ExecutionException, InterruptedException {
+		List<ResourcePack> list = new ArrayList<>();
 		ARRP.waitForPregen();
 		ARRP_LOGGER.info("ARRP register - before user");
-		RRPEvent.BeforeUser beforeUser = new RRPEvent.BeforeUser(list, null);
-		ModLoader.get().postEvent(beforeUser);
+		RRPEvent.BeforeUser beforeUser = new RRPEvent.BeforeUser(list, type);
+		ARRP.EVENT_BUS.post(beforeUser);
 
 		for (ResourcePack pack : list) {
-			adder.accept(ResourcePackProfile.of(
-				pack.getName(),
-				false,
-				() -> pack,
-				factory,
-				ResourcePackProfile.InsertionPosition.TOP,
-				RUNTIME
+			adder.accept(ResourcePackProfile.create(
+					pack.getName(),
+					Text.literal(pack.getName()),
+					false,
+					(name) -> pack,
+					this.type,
+					ResourcePackProfile.InsertionPosition.TOP,
+					RUNTIME
 			));
 		}
 	}
