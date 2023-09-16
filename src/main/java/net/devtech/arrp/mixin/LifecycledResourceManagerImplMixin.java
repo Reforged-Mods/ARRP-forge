@@ -33,11 +33,11 @@ public abstract class LifecycledResourceManagerImplMixin {
 		});
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(before), type);
-		ModLoader.get().postEvent(beforeVanilla);
+		ARRP.EVENT_BUS.post(beforeVanilla);
 
 		ARRP_LOGGER.info("ARRP register - after vanilla");
 		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(before, type);
-		ModLoader.get().postEvent(afterVanilla);
+		ARRP.EVENT_BUS.post(afterVanilla);
 		return before;
 	}
 }
