@@ -450,7 +450,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		this.lock();
 		Supplier<byte[]> supplier = this.getSys(type).get(id);
 		if(supplier == null) {
-			LOGGER.warn("No resource found for " + id);
+			//LOGGER.warn("No resource found for " + id);
 			this.waiting.unlock();
 			return null;
 		}
@@ -463,8 +463,11 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		this.lock();
 		Set<Identifier> identifiers = new HashSet<>();
 		for(Identifier identifier : this.getSys(type).keySet()) {
-			if(identifier.getNamespace().equals(namespace) && identifier.getPath().startsWith(prefix) && pathFilter.test(identifier)) {
-				identifiers.add(identifier);
+			Supplier<byte[]> supplier = this.getSys(type).get(identifier);
+			if(supplier == null) {
+				//LOGGER.warn("No resource found for " + identifier);
+				this.waiting.unlock();
+				continue;
 			}
 		}
 		this.waiting.unlock();

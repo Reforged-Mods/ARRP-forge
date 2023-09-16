@@ -16,14 +16,14 @@ Gradle:
 // should work for both groovy and kotlin DSL
 repositories {
 	maven {
-		url = uri("https://storage.googleapis.com/devan-maven/")
+		url = uri("https://ueaj.dev/maven")
 		// for 0.4.2 and older
 		// url uri("https://raw.githubusercontent.com/Devan-Kerman/Devan-Repo/master/")
 	}
 }
 
 dependencies {
-    modImplementation("net.devtech:arrp:0.6.7")
+    modImplementation("net.devtech:arrp:0.8.0")
     // I never break backwards compatibility, so just fetching the latest version should be fine
     // modImplementation("net.devtech:arrp:0.+")
 }

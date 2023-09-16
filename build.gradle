@@ -40,23 +40,25 @@ java {
     withSourcesJar()
 }
 
-tasks.withType(JavaCompile) {
-    options.encoding = "UTF-8"
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 17
 }
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${base.archivesName.get()}"}
+        rename { "${it}_${project.archivesBaseName}" }
     }
 }
+
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from(components.java)
+            from(components["java"])
         }
     }
-
+    // select the repositories you want to publish to
     repositories {
         maven {
             def mavenUrl = project.hasProperty('maven_url') ? project.property('maven_url') : ""
@@ -84,19 +86,19 @@ if(file.exists()) {
             gameVersions = ["1.19"]
             gameLoaders = ["forge"]
 
-        mainPublication(tasks.remapJar)
-
-        System.getenv("CURSEFORGE")?.with { String key ->
+        var cfToken = project.findProperty("cf_token")
+        if (cfToken != null) {
             curseforge {
-                token.set(key)
-                id.set("463113")
+                token = cfToken
+                id = "463113" // Required, must be a string, ID of CurseForge project
             }
         }
 
-        System.getenv("MODRINTH")?.with { String key ->
+        var mrToken = project.findProperty("mr_token")
+        if (mrToken != null) {
             modrinth {
-                token.set(key)
-                id.set("USLVyT7V")
+                token = mrToken
+                id = "USLVyT7V" // Required, must be a string, ID of Modrinth project
             }
         }
     }

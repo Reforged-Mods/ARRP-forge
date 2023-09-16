@@ -2,7 +2,9 @@ package net.devtech.arrp.mixin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 import com.google.common.collect.Lists;
 import net.devtech.arrp.ARRP;
@@ -34,7 +36,17 @@ public abstract class LifecycledResourceManagerImplMixin {
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(before), type);
 		ModLoader.get().postEvent(beforeVanilla);
+		OptionalInt optionalInt = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getName().equals("fabric")).findFirst();
 
+		if (optionalInt.isPresent()) {
+			ARRP_LOGGER.info("ARRP register - between vanilla and mods");
+			int initialCopyLength = copy.size();
+			SidedRRPCallback.BETWEEN_VANILLA_AND_MODS.invoker().insert(type, copy.subList(0, optionalInt.getAsInt()));
+			ARRP_LOGGER.info("ARRP register - between mods and user");
+			int finalCopyLength = copy.size();
+			SidedRRPCallback.BETWEEN_MODS_AND_USER.invoker().insert(type, copy.subList(0, optionalInt.getAsInt()+1+(finalCopyLength-initialCopyLength)));
+		}
+		
 		ARRP_LOGGER.info("ARRP register - after vanilla");
 		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(before, type);
 		ModLoader.get().postEvent(afterVanilla);
