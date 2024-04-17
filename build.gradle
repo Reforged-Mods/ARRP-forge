@@ -1,5 +1,5 @@
 plugins {
-    id "dev.architectury.loom" version "0.12.0-SNAPSHOT"
+    id "dev.architectury.loom" version "1.4-SNAPSHOT"
     id 'maven-publish'
     id "me.shedaniel.unified-publishing" version "0.1.+"
 }
@@ -13,9 +13,12 @@ loom {
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
 
-archivesBaseName = "${project.archives_base_name}-forge"
+archivesBaseName = "${project.archives_base_name}"
 version = project.mod_version
 group = project.maven_group
+
+def isCI = System.getenv("GITHUB_ACTION")
+def isRELEASE = System.getenv("GITHUB_RELEASE")
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -55,20 +58,22 @@ jar {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            from(components["java"])
+            artifactId = "arrp-forge"
+            from(components.java)
         }
     }
     // select the repositories you want to publish to
     repositories {
-        maven {
-            def mavenUrl = project.hasProperty('maven_url') ? project.property('maven_url') : ""
-            url mavenUrl
-            if (mavenUrl.startsWith("http")) {
+        if (isCI && isRELEASE) {
+            maven {
+                url = "https://repo.repsy.io/mvn/trinsdar/trins-mods/"
                 credentials {
-                    username project.hasProperty('maven_username') ? project.property('maven_username') : ""
-                    password project.hasProperty('maven_password') ? project.property('maven_password') : ""
+                    username = System.getenv("MAVEN_USERNAME")
+                    password = System.getenv("MAVEN_PASSWORD")
                 }
             }
+        } else {
+            mavenLocal()
         }
     }
 }
