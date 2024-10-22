@@ -17,8 +17,7 @@ archivesBaseName = "${project.archives_base_name}"
 version = project.mod_version
 group = project.maven_group
 
-def isCI = System.getenv("GITHUB_ACTION")
-def isRELEASE = System.getenv("GITHUB_RELEASE")
+def isCI = System.getenv("CI")
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -64,13 +63,9 @@ publishing {
     }
     // select the repositories you want to publish to
     repositories {
-        if (isCI && isRELEASE) {
+        if (isCI) {
             maven {
-                url = "https://repo.repsy.io/mvn/trinsdar/trins-mods/"
-                credentials {
-                    username = System.getenv("MAVEN_USERNAME")
-                    password = System.getenv("MAVEN_PASSWORD")
-                }
+                url System.getenv("local_maven_url")
             }
         } else {
             mavenLocal()
