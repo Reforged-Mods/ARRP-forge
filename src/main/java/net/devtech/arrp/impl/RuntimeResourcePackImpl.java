@@ -512,7 +512,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 
 	@Override
 	public String getName() {
-		return "Runtime Resource Pack" + this.id;
+		return "Runtime Resource Pack " + this.id;
 	}
 
 	@Override
