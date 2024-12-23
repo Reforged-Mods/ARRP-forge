@@ -331,9 +331,14 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		// data dump time
 		try {
 			for(Map.Entry<List<String>, Supplier<byte[]>> e : this.root.entrySet()) {
-				Path root = output.resolve(String.join("/", e.getKey()));
-				Files.createDirectories(root.getParent());
-				Files.write(root, e.getValue().get());
+				String pathStr = String.join("/", e.getKey());
+				Path path = output.resolve(pathStr);
+				if(path.startsWith(output)) {
+					Files.createDirectories(path.getParent());
+					Files.write(path, e.getValue().get());
+				} else {
+					LOGGER.error("RRP contains out-of-directory path! \"" + pathStr + "\"");
+				}
 			}
 
 			Path assets = output.resolve("assets");
