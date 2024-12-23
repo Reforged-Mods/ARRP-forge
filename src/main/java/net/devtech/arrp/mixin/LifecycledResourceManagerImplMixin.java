@@ -2,7 +2,9 @@ package net.devtech.arrp.mixin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 import com.google.common.collect.Lists;
 import net.devtech.arrp.ARRP;
@@ -26,18 +28,30 @@ public abstract class LifecycledResourceManagerImplMixin {
 
 	@ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true)
 	private static List<ResourcePack> registerARRPs(List<ResourcePack> packs, ResourceType type, List<ResourcePack> packs0) throws ExecutionException, InterruptedException {
-		IrremovableList<ResourcePack> before = new IrremovableList<>(new ArrayList<>(packs), pack -> {
+		IrremovableList<ResourcePack> copy = new IrremovableList<>(new ArrayList<>(packs), pack -> {
 			if (pack instanceof RuntimeResourcePack) {
 				((RuntimeResourcePack) pack).dump();
 			}
 		});
 		ARRP_LOGGER.info("ARRP register - before vanilla");
-		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(before), type);
+		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(copy), type);
 		ARRP.EVENT_BUS.post(beforeVanilla);
+		OptionalInt firstPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).findFirst();
+		OptionalInt lastPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).reduce((first, second) -> second);
+		if (firstPackIndex.isPresent() && lastPackIndex.isPresent()) {
+			ARRP_LOGGER.info("ARRP register - between vanilla and mods");
+			int initialCopyLength = copy.size();
+			RRPEvent.BetweenVanillaAndMods betweenVanillaAndMods = new RRPEvent.BetweenVanillaAndMods(copy.subList(0, firstPackIndex.getAsInt()), type);
+			ARRP.EVENT_BUS.post(betweenVanillaAndMods);
+			ARRP_LOGGER.info("ARRP register - between mods and user");
+			int finalCopyLength = copy.size();
+			RRPEvent.BetweenModsAndUser betweenModsAndUser = new RRPEvent.BetweenModsAndUser(copy.subList(0, lastPackIndex.getAsInt()+1+(finalCopyLength-initialCopyLength)), type);
+			ARRP.EVENT_BUS.post(betweenModsAndUser);
+		}
 
 		ARRP_LOGGER.info("ARRP register - after vanilla");
-		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(before, type);
+		RRPEvent.AfterVanilla afterVanilla = new RRPEvent.AfterVanilla(copy, type);
 		ARRP.EVENT_BUS.post(afterVanilla);
-		return before;
+		return copy;
 	}
 }
