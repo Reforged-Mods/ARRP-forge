@@ -32,7 +32,7 @@ public class FileResourcePackProviderMixin {
 		ARRP.waitForPregen();
 		ARRP_LOGGER.info("ARRP register - before user");
 		RRPEvent.BeforeUser beforeUser = new RRPEvent.BeforeUser(list, null);
-		ModLoader.get().postEvent(beforeUser);
+		ARRP.EVENT_BUS.post(beforeUser);
 
 		for (ResourcePack pack : list) {
 			adder.accept(ResourcePackProfile.of(
