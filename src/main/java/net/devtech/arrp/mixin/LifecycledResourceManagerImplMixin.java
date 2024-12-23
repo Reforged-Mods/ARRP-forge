@@ -35,16 +35,16 @@ public abstract class LifecycledResourceManagerImplMixin {
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(copy), type);
 		ARRP.EVENT_BUS.post(beforeVanilla);
-		OptionalInt optionalInt = IntStream.range(0, copy.size()).filter(i -> copy.get(i) instanceof PathPackResources && copy.get(i).getClass().isAnonymousClass()).findFirst();
-
-		if (optionalInt.isPresent()) {
+		OptionalInt firstPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).findFirst();
+		OptionalInt lastPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).reduce((first, second) -> second);
+		if (firstPackIndex.isPresent() && lastPackIndex.isPresent()) {
 			ARRP_LOGGER.info("ARRP register - between vanilla and mods");
 			int initialCopyLength = copy.size();
-			RRPEvent.BetweenVanillaAndMods betweenVanillaAndMods = new RRPEvent.BetweenVanillaAndMods(copy.subList(0, optionalInt.getAsInt()), type);
+			RRPEvent.BetweenVanillaAndMods betweenVanillaAndMods = new RRPEvent.BetweenVanillaAndMods(copy.subList(0, firstPackIndex.getAsInt()), type);
 			ARRP.EVENT_BUS.post(betweenVanillaAndMods);
 			ARRP_LOGGER.info("ARRP register - between mods and user");
 			int finalCopyLength = copy.size();
-			RRPEvent.BetweenModsAndUser betweenModsAndUser = new RRPEvent.BetweenModsAndUser(copy.subList(0, optionalInt.getAsInt()+1+(finalCopyLength-initialCopyLength)), type);
+			RRPEvent.BetweenModsAndUser betweenModsAndUser = new RRPEvent.BetweenModsAndUser(copy.subList(0, lastPackIndex.getAsInt()+1+(finalCopyLength-initialCopyLength)), type);
 			ARRP.EVENT_BUS.post(betweenModsAndUser);
 		}
 		
