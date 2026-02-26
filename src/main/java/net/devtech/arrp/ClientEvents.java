@@ -10,10 +10,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 
-@Mod.EventBusSubscriber(bus = Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = "arrp", bus = Bus.MOD, value = Dist.CLIENT)
 public class ClientEvents {
     @SubscribeEvent
-    public void particleFactoryRegister(RegisterParticleProvidersEvent event){
+    public static void particleFactoryRegister(RegisterParticleProvidersEvent event){
         if (FMLEnvironment.dist.isClient()){
             ModLoader.get().postEvent(new RRPInitEvent());
         }
