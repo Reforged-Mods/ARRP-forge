@@ -63,8 +63,11 @@ import net.devtech.arrp.util.UnsafeByteArrayOutputStream;
 import net.minecraft.resource.AbstractFileResourcePack;
 import net.minecraft.resource.InputSupplier;
 import net.minecraft.resource.ResourcePack;
+import net.minecraft.resource.ResourcePackInfo;
+import net.minecraft.resource.ResourcePackSource;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.resource.metadata.ResourceMetadataReader;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -161,6 +164,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 
 	public final int packVersion;
 	private final Identifier id;
+	private final ResourcePackInfo info;
 	private final Lock waiting = new ReentrantLock();
 	private final Map<Identifier, Supplier<byte[]>> data = new ConcurrentHashMap<>();
 	private final Map<Identifier, Supplier<byte[]>> assets = new ConcurrentHashMap<>();
@@ -174,6 +178,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	public RuntimeResourcePackImpl(Identifier id, int version) {
 		this.packVersion = version;
 		this.id = id;
+		this.info = new ResourcePackInfo(this.id.toString(), Text.of("Runtime Resource Pack " + this.id), ResourcePackSource.NONE, Optional.empty());
 	}
 
 	@Override
@@ -524,8 +529,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public String getName() {
-		return "Runtime Resource Pack" + this.id;
+	public ResourcePackInfo getInfo() {
+		return info;
 	}
 
 	@Override
@@ -555,7 +560,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	private static Identifier fix(Identifier identifier, String prefix, String append) {
-		return new Identifier(identifier.getNamespace(), prefix + '/' + identifier.getPath() + '.' + append);
+		return Identifier.of(identifier.getNamespace(), prefix + '/' + identifier.getPath() + '.' + append);
 	}
 
 	protected byte[] read(ZipEntry entry, InputStream stream) throws IOException {
@@ -570,7 +575,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		int sep = fullPath.indexOf('/');
 		String namespace = fullPath.substring(0, sep);
 		String path = fullPath.substring(sep + 1);
-		map.put(new Identifier(namespace, path), () -> data);
+		map.put(Identifier.of(namespace, path), () -> data);
 	}
 
 	private void lock() {
