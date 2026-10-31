@@ -9,7 +9,11 @@ pluginManagement {
             name = 'Architectury'
             url = uri("https://maven.architectury.dev/")
         }
-        maven { url "https://maven.minecraftforge.net/" }
+        maven {
+            name = 'RelativityMC'
+            url = 'https://repo.codemc.io/repository/relativitymc/'
+        }
+        maven { url "https://maven.neoforged.net/releases/" }
         gradlePluginPortal()
     }
 }
