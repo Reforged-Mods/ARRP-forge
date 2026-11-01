@@ -14,8 +14,6 @@ import static net.devtech.arrp.json.models.JModel.faces;
 import static net.devtech.arrp.json.models.JModel.model;
 import static net.devtech.arrp.json.models.JModel.textures;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import net.devtech.arrp.api.RuntimeResourcePack;
 import net.devtech.arrp.impl.RuntimeResourcePackImpl;
 import net.devtech.arrp.json.blockstate.JMultipart;
@@ -25,13 +23,12 @@ import net.devtech.arrp.json.blockstate.JWhen;
 import net.devtech.arrp.json.lang.JLang;
 import net.devtech.arrp.json.models.JModel;
 import net.devtech.arrp.json.models.JTextures;
-import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
 
 import java.nio.file.Path;
 
 public class RRPPreTest {
 	public static void main(String[] args) {
+/*
 		RuntimeResourcePack pack = RuntimeResourcePack.create("test:test");
 		pack.addLang(ResourceLocation.fromNamespaceAndPath("aaaa", "aaaa"), new JLang().entry("aaaa", "bbbbb"));
 		pack.dumpDirect(Path.of("aaaa"));
@@ -73,5 +70,6 @@ public class RRPPreTest {
 		System.out.println(gson.toJson(model));
 
 		System.out.println(gson.toJson(lang));
+*/
 	}
 }
