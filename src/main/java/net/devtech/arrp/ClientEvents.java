@@ -1,21 +1,20 @@
 package net.devtech.arrp;
 
 import net.devtech.arrp.api.RRPInitEvent;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.common.EventBusSubscriber.Bus;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 
-@Mod.EventBusSubscriber(modid = "arrp", bus = Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = "arrp", bus = Bus.MOD, value = Dist.CLIENT)
 public class ClientEvents {
     @SubscribeEvent
     public static void particleFactoryRegister(RegisterParticleProvidersEvent event){
         if (FMLEnvironment.dist.isClient()){
-            ModLoader.get().postEvent(new RRPInitEvent());
+            ModLoader.postEvent(new RRPInitEvent());
         }
     }
 }

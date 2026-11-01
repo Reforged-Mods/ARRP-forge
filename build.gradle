@@ -46,7 +46,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
+        rename { "${it}_${project.base.archivesName}" }
     }
 }
 
@@ -69,7 +69,9 @@ publishing {
         }
     }
 }
-
+tasks.withType(AbstractTestTask).configureEach {
+    failOnNoDiscoveredTests = false
+}
 /*
 File file = file("tokens.properties")
 if(file.exists()) {

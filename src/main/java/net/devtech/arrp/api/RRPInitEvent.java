@@ -1,7 +1,8 @@
 package net.devtech.arrp.api;
 
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.fml.event.IModBusEvent;
+
+import net.neoforged.bus.api.Event;
+import net.neoforged.fml.event.IModBusEvent;
 
 public class RRPInitEvent extends Event implements IModBusEvent {
 }

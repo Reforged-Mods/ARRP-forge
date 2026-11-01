@@ -8,7 +8,6 @@ import net.minecraft.resource.ResourcePackProfile.Metadata;
 import net.minecraft.resource.ResourcePackProfile.PackFactory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraftforge.fml.ModLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -29,7 +28,6 @@ public class FileResourcePackProviderMixin {
 	@Shadow
 	@Final
 	private ResourceType type;
-	private static final ResourcePackSource RUNTIME = ResourcePackSource.create(getSourceTextSupplier(), true);
 	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/FileResourcePackProviderMixin");
 
 	private static UnaryOperator<Text> getSourceTextSupplier() {

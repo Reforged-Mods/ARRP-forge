@@ -435,8 +435,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public Identifier getId() {
-		return this.id;
+	public String getId() {
+		return this.id.toString();
 	}
 
 	/**
