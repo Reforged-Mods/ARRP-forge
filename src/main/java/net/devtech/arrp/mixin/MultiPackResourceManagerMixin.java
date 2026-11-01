@@ -19,8 +19,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(MultiPackResourceManager.class)
-public abstract class LifecycledResourceManagerImplMixin {
-	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/ReloadableResourceManagerImplMixin");
+public abstract class MultiPackResourceManagerMixin {
+	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/MultiPackResourceManagerMixin");
 
 	@ModifyVariable(method = "<init>", at = @At("HEAD"), argsOnly = true)
 	private static List<PackResources> registerARRPs(List<PackResources> packs, PackType type, List<PackResources> packs0) throws ExecutionException, InterruptedException {

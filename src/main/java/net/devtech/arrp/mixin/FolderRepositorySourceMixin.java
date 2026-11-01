@@ -29,11 +29,11 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 @Mixin(FolderRepositorySource.class)
-public class FileResourcePackProviderMixin {
+public class FolderRepositorySourceMixin {
 	@Shadow
 	@Final
 	private PackType packType;
-	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/FileResourcePackProviderMixin");
+	private static final Logger ARRP_LOGGER = LogManager.getLogger("ARRP/FolderRepositorySourceMixin");
 
 	private static UnaryOperator<Component> getSourceTextSupplier() {
 		Component text = Component.translatable("pack.source.runtime");
