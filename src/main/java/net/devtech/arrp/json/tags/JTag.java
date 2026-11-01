@@ -2,8 +2,7 @@ package net.devtech.arrp.json.tags;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class JTag {
 	private Boolean replace;
@@ -11,7 +10,7 @@ public class JTag {
 
 	/**
 	 * @see #tag()
-	 * @see #tag(Identifier)
+	 * @see #tag(ResourceLocation)
 	 */
 	public JTag() {}
 
@@ -34,7 +33,7 @@ public class JTag {
 	/**
 	 * add a normal item to the tag
 	 */
-	public JTag add(Identifier identifier) {
+	public JTag add(ResourceLocation identifier) {
 		this.values.add(identifier.toString());
 		return this;
 	}
@@ -42,7 +41,7 @@ public class JTag {
 	/**
 	 * add a tag to the tag
 	 */
-	public JTag tag(Identifier tag) {
+	public JTag tag(ResourceLocation tag) {
 		this.values.add('#' + tag.getNamespace() + ':' + tag.getPath());
 		return this;
 	}

@@ -1,11 +1,10 @@
 package net.devtech.arrp.json.loot;
 
 import com.google.gson.*;
-import net.minecraft.util.Identifier;
-
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.resources.ResourceLocation;
 
 public class JFunction implements Cloneable {
 	private final List<JCondition> conditions = new ArrayList<>();
@@ -46,7 +45,7 @@ public class JFunction implements Cloneable {
 		return parameter(key, new JsonPrimitive(value));
 	}
 
-	public JFunction parameter(String key, Identifier value) {
+	public JFunction parameter(String key, ResourceLocation value) {
 		return parameter(key, value.toString());
 	}
 

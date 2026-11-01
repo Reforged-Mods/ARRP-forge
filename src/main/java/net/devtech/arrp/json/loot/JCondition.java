@@ -10,8 +10,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import net.devtech.arrp.impl.RuntimeResourcePackImpl;
 import net.devtech.arrp.json.models.JModel;
-
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class JCondition implements Cloneable {
 	private JsonObject parameters = new JsonObject();
@@ -58,7 +57,7 @@ public class JCondition implements Cloneable {
 		return parameter(key, new JsonPrimitive(value));
 	}
 
-	public JCondition parameter(String key, Identifier value) {
+	public JCondition parameter(String key, ResourceLocation value) {
 		return parameter(key, value.toString());
 	}
 

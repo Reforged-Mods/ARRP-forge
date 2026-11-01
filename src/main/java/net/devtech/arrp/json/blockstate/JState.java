@@ -3,13 +3,11 @@ package net.devtech.arrp.json.blockstate;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-
+import net.minecraft.resources.ResourceLocation;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
-import net.minecraft.util.Identifier;
 
 public final class JState {
 	private final List<JVariant> variants = new ArrayList<>();
@@ -73,7 +71,7 @@ public final class JState {
 		return new JBlockModel(id);
 	}
 
-	public static JBlockModel model(Identifier id) {
+	public static JBlockModel model(ResourceLocation id) {
 		return new JBlockModel(id);
 	}
 

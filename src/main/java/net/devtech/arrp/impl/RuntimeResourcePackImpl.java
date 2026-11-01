@@ -14,11 +14,6 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -60,15 +55,15 @@ import net.devtech.arrp.json.tags.JTag;
 import net.devtech.arrp.util.CallableFunction;
 import net.devtech.arrp.util.CountingInputStream;
 import net.devtech.arrp.util.UnsafeByteArrayOutputStream;
-import net.minecraft.resource.AbstractFileResourcePack;
-import net.minecraft.resource.InputSupplier;
-import net.minecraft.resource.ResourcePack;
-import net.minecraft.resource.ResourcePackInfo;
-import net.minecraft.resource.ResourcePackSource;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.resource.metadata.ResourceMetadataReader;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.AbstractPackResources;
+import net.minecraft.server.packs.PackLocationInfo;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.server.packs.resources.IoSupplier;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -98,7 +93,7 @@ import static java.lang.String.valueOf;
  */
 @Deprecated
 @ApiStatus.Internal
-public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePack {
+public class RuntimeResourcePackImpl implements RuntimeResourcePack, PackResources {
 	public static final ExecutorService EXECUTOR_SERVICE;
 	public static final boolean DUMP;
 	public static final boolean DEBUG_PERFORMANCE;
@@ -119,7 +114,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 									 .registerTypeAdapter(JKeys.class, new JKeys.Serializer())
 									 .registerTypeAdapter(JIngredient.class, new JIngredient.Serializer())
 									 .registerTypeAdapter(JIngredients.class, new JIngredients.Serializer())
-									 .registerTypeAdapter(Identifier.class, new Identifier.Serializer())
+									 .registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer())
 									 .registerTypeAdapter(JCondition.class, new JCondition.Serializer())
 									 .create();
 	// if it works, don't touch it
@@ -163,27 +158,27 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	public final int packVersion;
-	private final Identifier id;
-	private final ResourcePackInfo info;
+	private final ResourceLocation id;
+	private final PackLocationInfo info;
 	private final Lock waiting = new ReentrantLock();
-	private final Map<Identifier, Supplier<byte[]>> data = new ConcurrentHashMap<>();
-	private final Map<Identifier, Supplier<byte[]>> assets = new ConcurrentHashMap<>();
+	private final Map<ResourceLocation, Supplier<byte[]>> data = new ConcurrentHashMap<>();
+	private final Map<ResourceLocation, Supplier<byte[]>> assets = new ConcurrentHashMap<>();
 	private final Map<List<String>, Supplier<byte[]>> root = new ConcurrentHashMap<>();
-	private final Map<Identifier, JLang> langMergable = new ConcurrentHashMap<>();
+	private final Map<ResourceLocation, JLang> langMergable = new ConcurrentHashMap<>();
 
-	public RuntimeResourcePackImpl(Identifier id) {
+	public RuntimeResourcePackImpl(ResourceLocation id) {
 		this(id, 5);
 	}
 
-	public RuntimeResourcePackImpl(Identifier id, int version) {
+	public RuntimeResourcePackImpl(ResourceLocation id, int version) {
 		this.packVersion = version;
 		this.id = id;
-		this.info = new ResourcePackInfo(this.id.toString(), Text.of("Runtime Resource Pack " + this.id), ResourcePackSource.NONE, Optional.empty());
+		this.info = new PackLocationInfo(this.id.toString(), Component.nullToEmpty("Runtime Resource Pack " + this.id), PackSource.DEFAULT, Optional.empty());
 	}
 
 	@Override
-	public void addRecoloredImage(Identifier identifier, InputStream target, IntUnaryOperator operator) {
-		this.addLazyResource(ResourceType.CLIENT_RESOURCES, fix(identifier, "textures", "png"), (i, r) -> {
+	public void addRecoloredImage(ResourceLocation identifier, InputStream target, IntUnaryOperator operator) {
+		this.addLazyResource(PackType.CLIENT_RESOURCES, fix(identifier, "textures", "png"), (i, r) -> {
 			try {
 
 				// optimize buffer allocation, input and output image after recoloring should be roughly the same size
@@ -208,17 +203,17 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public byte[] addLang(Identifier identifier, JLang lang) {
+	public byte[] addLang(ResourceLocation identifier, JLang lang) {
 		return this.addAsset(fix(identifier, "lang", "json"), serialize(lang.getLang()));
 	}
 
 	@Override
-	public void mergeLang(Identifier identifier, JLang lang) {
+	public void mergeLang(ResourceLocation identifier, JLang lang) {
 		this.langMergable.compute(identifier, (identifier1, lang1) -> {
 			if(lang1 == null) {
 				lang1 = new JLang();
 				JLang finalLang = lang1;
-				this.addLazyResource(ResourceType.CLIENT_RESOURCES, identifier, (pack, identifier2) -> {
+				this.addLazyResource(PackType.CLIENT_RESOURCES, identifier, (pack, identifier2) -> {
 					return pack.addLang(identifier, finalLang);
 				});
 			}
@@ -228,12 +223,12 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public byte[] addLootTable(Identifier identifier, JLootTable table) {
+	public byte[] addLootTable(ResourceLocation identifier, JLootTable table) {
 		return this.addData(fix(identifier, "loot_tables", "json"), serialize(table));
 	}
 
 	@Override
-	public Future<byte[]> addAsyncResource(ResourceType type, Identifier path, CallableFunction<Identifier, byte[]> data) {
+	public Future<byte[]> addAsyncResource(PackType type, ResourceLocation path, CallableFunction<ResourceLocation, byte[]> data) {
 		Future<byte[]> future = EXECUTOR_SERVICE.submit(() -> data.get(path));
 		this.getSys(type).put(path, () -> {
 			try {
@@ -246,13 +241,13 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public void addLazyResource(ResourceType type, Identifier path, BiFunction<RuntimeResourcePack, Identifier, byte[]> func) {
+	public void addLazyResource(PackType type, ResourceLocation path, BiFunction<RuntimeResourcePack, ResourceLocation, byte[]> func) {
 		this.getSys(type).put(path, new Memoized<>(func, path));
 	}
 
 
 	@Override
-	public byte[] addResource(ResourceType type, Identifier path, byte[] data) {
+	public byte[] addResource(PackType type, ResourceLocation path, byte[] data) {
 		this.getSys(type).put(path, () -> data);
 		return data;
 	}
@@ -282,27 +277,27 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public byte[] addAsset(Identifier path, byte[] data) {
-		return this.addResource(ResourceType.CLIENT_RESOURCES, path, data);
+	public byte[] addAsset(ResourceLocation path, byte[] data) {
+		return this.addResource(PackType.CLIENT_RESOURCES, path, data);
 	}
 
 	@Override
-	public byte[] addData(Identifier path, byte[] data) {
-		return this.addResource(ResourceType.SERVER_DATA, path, data);
+	public byte[] addData(ResourceLocation path, byte[] data) {
+		return this.addResource(PackType.SERVER_DATA, path, data);
 	}
 
 	@Override
-	public byte[] addModel(JModel model, Identifier path) {
+	public byte[] addModel(JModel model, ResourceLocation path) {
 		return this.addAsset(fix(path, "models", "json"), serialize(model));
 	}
 
 	@Override
-	public byte[] addBlockState(JState state, Identifier path) {
+	public byte[] addBlockState(JState state, ResourceLocation path) {
 		return this.addAsset(fix(path, "blockstates", "json"), serialize(state));
 	}
 
 	@Override
-	public byte[] addTexture(Identifier id, BufferedImage image) {
+	public byte[] addTexture(ResourceLocation id, BufferedImage image) {
 		UnsafeByteArrayOutputStream ubaos = new UnsafeByteArrayOutputStream();
 		try {
 			ImageIO.write(image, "png", ubaos);
@@ -313,17 +308,17 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public byte[] addAnimation(Identifier id, JAnimation animation) {
+	public byte[] addAnimation(ResourceLocation id, JAnimation animation) {
 		return this.addAsset(fix(id, "textures", "png.mcmeta"), serialize(animation));
 	}
 
 	@Override
-	public byte[] addTag(Identifier id, JTag tag) {
+	public byte[] addTag(ResourceLocation id, JTag tag) {
 		return this.addData(fix(id, "tags", "json"), serialize(tag));
 	}
 
 	@Override
-	public byte[] addRecipe(Identifier id, JRecipe recipe) {
+	public byte[] addRecipe(ResourceLocation id, JRecipe recipe) {
 		return this.addData(fix(id, "recipes", "json"), serialize(recipe));
 	}
 
@@ -354,13 +349,13 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 
 			Path assets = output.resolve("assets");
 			Files.createDirectories(assets);
-			for(Map.Entry<Identifier, Supplier<byte[]>> entry : this.assets.entrySet()) {
+			for(Map.Entry<ResourceLocation, Supplier<byte[]>> entry : this.assets.entrySet()) {
 				this.write(assets, entry.getKey(), entry.getValue().get());
 			}
 
 			Path data = output.resolve("data");
 			Files.createDirectories(data);
-			for(Map.Entry<Identifier, Supplier<byte[]>> entry : this.data.entrySet()) {
+			for(Map.Entry<ResourceLocation, Supplier<byte[]>> entry : this.data.entrySet()) {
 				this.write(data, entry.getKey(), entry.getValue().get());
 			}
 		} catch(IOException exception) {
@@ -400,15 +395,15 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 			zos.closeEntry();
 		}
 
-		for(Map.Entry<Identifier, Supplier<byte[]>> entry : this.assets.entrySet()) {
-			Identifier id = entry.getKey();
+		for(Map.Entry<ResourceLocation, Supplier<byte[]>> entry : this.assets.entrySet()) {
+			ResourceLocation id = entry.getKey();
 			zos.putNextEntry(new ZipEntry("assets/" + id.getNamespace() + "/" + id.getPath()));
 			zos.write(entry.getValue().get());
 			zos.closeEntry();
 		}
 
-		for(Map.Entry<Identifier, Supplier<byte[]>> entry : this.data.entrySet()) {
-			Identifier id = entry.getKey();
+		for(Map.Entry<ResourceLocation, Supplier<byte[]>> entry : this.data.entrySet()) {
+			ResourceLocation id = entry.getKey();
 			zos.putNextEntry(new ZipEntry("data/" + id.getNamespace() + "/" + id.getPath()));
 			zos.write(entry.getValue().get());
 			zos.closeEntry();
@@ -435,7 +430,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public String getId() {
+	public String packId() {
 		return this.id.toString();
 	}
 
@@ -446,7 +441,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	 * @return the pack.png image as a stream
 	 */
 	@Override
-	public InputSupplier<InputStream> openRoot(String... segments) {
+	public IoSupplier<InputStream> getRootResource(String... segments) {
 		this.lock();
 		Supplier<byte[]> supplier = this.root.get(Arrays.asList(segments));
 		if(supplier == null) {
@@ -458,7 +453,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public InputSupplier<InputStream> open(ResourceType type, Identifier id) {
+	public IoSupplier<InputStream> getResource(PackType type, ResourceLocation id) {
 		this.lock();
 		Supplier<byte[]> supplier = this.getSys(type).get(id);
 		if(supplier == null) {
@@ -471,17 +466,17 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public void findResources(
-			ResourceType type, String namespace, String prefix, ResultConsumer consumer) {
+	public void listResources(
+			PackType type, String namespace, String prefix, ResourceOutput consumer) {
 		this.lock();
-		for(Identifier identifier : this.getSys(type).keySet()) {
+		for(ResourceLocation identifier : this.getSys(type).keySet()) {
 			Supplier<byte[]> supplier = this.getSys(type).get(identifier);
 			if(supplier == null) {
 				//LOGGER.warn("No resource found for " + identifier);
 				this.waiting.unlock();
 				continue;
 			}
-			InputSupplier<InputStream> inputSupplier = () -> new ByteArrayInputStream(supplier.get());
+			IoSupplier<InputStream> inputSupplier = () -> new ByteArrayInputStream(supplier.get());
 			if(identifier.getNamespace().equals(namespace) && identifier.getPath().startsWith(prefix)) {
 				consumer.accept(identifier, inputSupplier);
 			}
@@ -490,10 +485,10 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 	}
 
 	@Override
-	public Set<String> getNamespaces(ResourceType type) {
+	public Set<String> getNamespaces(PackType type) {
 		this.lock();
 		Set<String> namespaces = new HashSet<>();
-		for(Identifier identifier : this.getSys(type).keySet()) {
+		for(ResourceLocation identifier : this.getSys(type).keySet()) {
 			namespaces.add(identifier.getNamespace());
 		}
 		this.waiting.unlock();
@@ -502,10 +497,10 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 
 	// if it works, don't touch it
 	@Override
-	public <T> T parseMetadata(ResourceMetadataReader<T> metaReader) {
+	public <T> T getMetadataSection(MetadataSectionSerializer<T> metaReader) {
 		InputStream stream = null;
 		try {
-			InputSupplier<InputStream> supplier = this.openRoot("pack.mcmeta");
+			IoSupplier<InputStream> supplier = this.getRootResource("pack.mcmeta");
 			if (supplier != null) {
 				stream = supplier.get();
 			}
@@ -513,23 +508,23 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 			throw new RuntimeException(e);
 		}
 		if(stream != null) {
-			return AbstractFileResourcePack.parseMetadata(metaReader, stream);
+			return AbstractPackResources.getMetadataFromStream(metaReader, stream);
 		} else {
-			if(metaReader.getKey().equals("pack")) {
+			if(metaReader.getMetadataSectionName().equals("pack")) {
 				JsonObject object = new JsonObject();
 				object.addProperty("pack_format", this.packVersion);
 				object.addProperty("description", "runtime resource pack");
 				return metaReader.fromJson(object);
 			}
-			if(KEY_WARNINGS.add(metaReader.getKey())) {
-				LOGGER.info("'" + metaReader.getKey() + "' is an unsupported metadata key");
+			if(KEY_WARNINGS.add(metaReader.getMetadataSectionName())) {
+				LOGGER.info("'" + metaReader.getMetadataSectionName() + "' is an unsupported metadata key");
 			}
 			return null;
 		}
 	}
 
 	@Override
-	public ResourcePackInfo getInfo() {
+	public PackLocationInfo location() {
 		return info;
 	}
 
@@ -559,8 +554,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		return ubaos.getBytes();
 	}
 
-	private static Identifier fix(Identifier identifier, String prefix, String append) {
-		return Identifier.of(identifier.getNamespace(), prefix + '/' + identifier.getPath() + '.' + append);
+	private static ResourceLocation fix(ResourceLocation identifier, String prefix, String append) {
+		return ResourceLocation.fromNamespaceAndPath(identifier.getNamespace(), prefix + '/' + identifier.getPath() + '.' + append);
 	}
 
 	protected byte[] read(ZipEntry entry, InputStream stream) throws IOException {
@@ -571,11 +566,11 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		return data;
 	}
 
-	protected void load(String fullPath, Map<Identifier, Supplier<byte[]>> map, byte[] data) {
+	protected void load(String fullPath, Map<ResourceLocation, Supplier<byte[]>> map, byte[] data) {
 		int sep = fullPath.indexOf('/');
 		String namespace = fullPath.substring(0, sep);
 		String path = fullPath.substring(sep + 1);
-		map.put(Identifier.of(namespace, path), () -> data);
+		map.put(ResourceLocation.fromNamespaceAndPath(namespace, path), () -> data);
 	}
 
 	private void lock() {
@@ -591,7 +586,7 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		}
 	}
 
-	private void write(Path dir, Identifier identifier, byte[] data) {
+	private void write(Path dir, ResourceLocation identifier, byte[] data) {
 		try {
 			String namespace = identifier.getNamespace();
 			String path = identifier.getPath();
@@ -610,8 +605,8 @@ public class RuntimeResourcePackImpl implements RuntimeResourcePack, ResourcePac
 		}
 	}
 
-	private Map<Identifier, Supplier<byte[]>> getSys(ResourceType side) {
-		return side == ResourceType.CLIENT_RESOURCES ? this.assets : this.data;
+	private Map<ResourceLocation, Supplier<byte[]>> getSys(PackType side) {
+		return side == PackType.CLIENT_RESOURCES ? this.assets : this.data;
 	}
 
 	private class Memoized<T> implements Supplier<byte[]> {

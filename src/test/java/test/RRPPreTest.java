@@ -25,15 +25,15 @@ import net.devtech.arrp.json.blockstate.JWhen;
 import net.devtech.arrp.json.lang.JLang;
 import net.devtech.arrp.json.models.JModel;
 import net.devtech.arrp.json.models.JTextures;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
 import java.nio.file.Path;
 
 public class RRPPreTest {
 	public static void main(String[] args) {
 		RuntimeResourcePack pack = RuntimeResourcePack.create("test:test");
-		pack.addLang(Identifier.of("aaaa", "aaaa"), new JLang().entry("aaaa", "bbbbb"));
+		pack.addLang(ResourceLocation.fromNamespaceAndPath("aaaa", "aaaa"), new JLang().entry("aaaa", "bbbbb"));
 		pack.dumpDirect(Path.of("aaaa"));
 
 		JState iron_block = state(variant(JState.model("block/iron_block")));
@@ -63,7 +63,7 @@ public class RRPPreTest {
 		                             .setPrettyPrinting()
 		                             .create();
 
-		JLang lang = JLang.lang().allPotionOf(Identifier.of("mod_id", "potion_id"), "Example");
+		JLang lang = JLang.lang().allPotionOf(ResourceLocation.fromNamespaceAndPath("mod_id", "potion_id"), "Example");
 
 		System.out.println(RuntimeResourcePackImpl.GSON.toJson(loot("minecraft:block").pool(pool().rolls(1)
                                                                                                   .entry(entry().type("minecraft:item").name("minecraft:diamond"))

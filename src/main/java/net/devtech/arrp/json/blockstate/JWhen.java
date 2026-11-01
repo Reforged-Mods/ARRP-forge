@@ -4,18 +4,16 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
+import net.minecraft.util.Tuple;
+import net.minecraft.world.level.block.state.properties.Property;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import net.minecraft.state.property.Property;
-import net.minecraft.util.Pair;
-
 public class JWhen implements Cloneable {
-	private final List<List<Pair<String, String[]>>> state = new ArrayList<>();
+	private final List<List<Tuple<String, String[]>>> state = new ArrayList<>();
 
 	/**
 	 * @see JState#when()
@@ -26,14 +24,14 @@ public class JWhen implements Cloneable {
 	public final <T extends Comparable<T>> JWhen add(Property<T> property, T... values) {
 		String[] states = new String[values.length];
 		for(int i = 0; i < values.length; i++) {
-			states[i] = property.name(values[i]);
+			states[i] = property.getName(values[i]);
 		}
 		
 		return this.add(property.getName(), states);
 	}
 	
 	public JWhen add(String condition, String... states) {
-		this.state.add(List.of(new Pair<>(condition, states)));
+		this.state.add(List.of(new Tuple<>(condition, states)));
 		return this;
 	}
 	
@@ -46,20 +44,20 @@ public class JWhen implements Cloneable {
 	 * @see JState#whenStateBuilder()
 	 */
 	public static class StateBuilder implements Cloneable {
-		final List<Pair<String, String[]>> state = new ArrayList<>();
+		final List<Tuple<String, String[]>> state = new ArrayList<>();
 		
 		@SafeVarargs
 		public final <T extends Comparable<T>> StateBuilder add(Property<T> property, T... values) {
 			String[] states = new String[values.length];
 			for(int i = 0; i < values.length; i++) {
-				states[i] = property.name(values[i]);
+				states[i] = property.getName(values[i]);
 			}
 			
 			return this.add(property.getName(), states);
 		}
 		
 		public StateBuilder add(String condition, String... states) {
-			this.state.add(new Pair<>(condition, states));
+			this.state.add(new Tuple<>(condition, states));
 			return this;
 		}
 		
@@ -87,17 +85,17 @@ public class JWhen implements Cloneable {
 		public JsonElement serialize(JWhen src, Type typeOfSrc, JsonSerializationContext context) {
 			if (src.state.size() == 1) {
 				JsonObject json = new JsonObject();
-				for(Pair<String, String[]> pair : src.state.get(0)) {
-					json.addProperty(pair.getLeft(), String.join("|", Arrays.asList(pair.getRight())));
+				for(Tuple<String, String[]> pair : src.state.get(0)) {
+					json.addProperty(pair.getA(), String.join("|", Arrays.asList(pair.getB())));
 				}
 				return json;
 			} else {
 				JsonObject or = new JsonObject();
 				JsonArray array = new JsonArray();
-				for(List<Pair<String, String[]>> pairs : src.state) {
+				for(List<Tuple<String, String[]>> pairs : src.state) {
 					JsonObject json = new JsonObject();
-					for(Pair<String, String[]> pair : pairs) {
-						json.addProperty(pair.getLeft(), String.join("|", Arrays.asList(pair.getRight())));
+					for(Tuple<String, String[]> pair : pairs) {
+						json.addProperty(pair.getA(), String.join("|", Arrays.asList(pair.getB())));
 					}
 					array.add(json);
 				}

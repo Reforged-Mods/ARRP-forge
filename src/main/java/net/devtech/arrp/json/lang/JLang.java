@@ -1,17 +1,16 @@
 package net.devtech.arrp.json.lang;
 
-import net.minecraft.block.Block;
-import net.minecraft.entity.EntityType;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 
 public class JLang implements Cloneable {
     private final Map<String, String> lang = new HashMap<>();
@@ -42,11 +41,11 @@ public class JLang implements Cloneable {
 
     private <T> JLang object(Registry<T> registry, String str, T t, String name) {
         return this.object(str,
-                Objects.requireNonNull(registry.getId(t), "register your item before calling this"),
+                Objects.requireNonNull(registry.getKey(t), "register your item before calling this"),
                 name);
     }
 
-    private JLang object(String type, Identifier identifier, String translation) {
+    private JLang object(String type, ResourceLocation identifier, String translation) {
         this.lang.put(type + '.' + identifier.getNamespace() + '.' + identifier.getPath(), translation);
         return this;
     }
@@ -58,100 +57,100 @@ public class JLang implements Cloneable {
 
 
     /**
-     * adds a translation key for an item, respects {@link Item#getTranslationKey()}
+     * adds a translation key for an item, respects {@link Item#getDescriptionId()}
      */
     public JLang itemRespect(Item item, String name) {
-        this.lang.put(item.getTranslationKey(), name);
+        this.lang.put(item.getDescriptionId(), name);
         return this;
     }
 
     public JLang item(ItemStack stack, String name) {
-        this.lang.put(stack.getTranslationKey(), name);
+        this.lang.put(stack.getDescriptionId(), name);
         return this;
     }
 
     /**
-     * @see JLang#itemRespect(Item, String) uses the {@link Item#getTranslationKey()}}
+     * @see JLang#itemRespect(Item, String) uses the {@link Item#getDescriptionId()}}
      */
     @Deprecated
     public JLang item(Item item, String name) {
-        return this.object(Registries.ITEM, "item", item, name);
+        return this.object(BuiltInRegistries.ITEM, "item", item, name);
     }
 
     /**
-     * adds a translation key for an block, respects {@link Block#getTranslationKey()}
+     * adds a translation key for an block, respects {@link Block#getDescriptionId()}
      */
     public JLang blockRespect(Block block, String name) {
-        this.lang.put(block.getTranslationKey(), name);
+        this.lang.put(block.getDescriptionId(), name);
         return this;
     }
 
     /**
-     * @see JLang#blockRespect(Block, String) uses the {@link Block#getTranslationKey()}}
+     * @see JLang#blockRespect(Block, String) uses the {@link Block#getDescriptionId()}}
      */
     @Deprecated
     public JLang block(Block block, String name) {
-        return this.object(Registries.BLOCK, "block", block, name);
+        return this.object(BuiltInRegistries.BLOCK, "block", block, name);
     }
 
     public JLang fluid(Fluid fluid, String name) {
-        return this.object(Registries.FLUID, "fluid", fluid, name);
+        return this.object(BuiltInRegistries.FLUID, "fluid", fluid, name);
     }
 
     /**
-     * adds a translation key for an entity, respects {@link EntityType#getTranslationKey()}
+     * adds a translation key for an entity, respects {@link EntityType#getDescriptionId()}
      */
     public JLang entityRespect(EntityType<?> type, String name) {
-        this.lang.put(type.getTranslationKey(), name);
+        this.lang.put(type.getDescriptionId(), name);
         return this;
     }
 
     /**
-     * @see JLang#entityRespect(EntityType, String) uses the {@link EntityType#getTranslationKey()}}
+     * @see JLang#entityRespect(EntityType, String) uses the {@link EntityType#getDescriptionId()}}
      */
     @Deprecated
     public JLang entity(EntityType<?> type, String name) {
-        return this.object(Registries.ENTITY_TYPE, "entity_type", type, name);
+        return this.object(BuiltInRegistries.ENTITY_TYPE, "entity_type", type, name);
     }
 
 
 
-    public JLang item(Identifier item, String name) {
+    public JLang item(ResourceLocation item, String name) {
         return this.object("item", item, name);
     }
 
-    public JLang block(Identifier block, String name) {
+    public JLang block(ResourceLocation block, String name) {
         return this.object("block", block, name);
     }
 
-    public JLang fluid(Identifier id, String name) {
+    public JLang fluid(ResourceLocation id, String name) {
         return this.object("fluid", id, name);
     }
 
-    public JLang entity(Identifier id, String name) {
+    public JLang entity(ResourceLocation id, String name) {
         return this.object("entity_type", id, name);
     }
 
-    public JLang enchantment(Identifier id, String name) {
+    public JLang enchantment(ResourceLocation id, String name) {
         return this.object("enchantment", id, name);
     }
 
-    public JLang itemGroup(Identifier id, String name) {
+    public JLang itemGroup(ResourceLocation id, String name) {
         return this.object("itemGroup", id, name);
     }
 
-    public JLang sound(Identifier id, String name) {
+    public JLang sound(ResourceLocation id, String name) {
         return this.object("sound_event", id, name);
     }
 
-    public JLang status(Identifier id, String name) {
+    public JLang status(ResourceLocation id, String name) {
         return this.object("mob_effect", id, name);
     }
 
     /**
      * Like {@link JLang#allPotion}, but it adds in the prefixes automatically.
      */
-    public JLang allPotionOf(Identifier id, String effectName) {
+    public JLang allPotionOf(ResourceLocation id, String effectName) {
         this.allPotion(id,
                 "Potion of " + effectName,
                 "Splash Potion of " + effectName,
@@ -160,7 +159,7 @@ public class JLang implements Cloneable {
         return this;
     }
 
-    public JLang allPotion(Identifier id,
+    public JLang allPotion(ResourceLocation id,
                            String drinkablePotionName,
                            String splashPotionName,
                            String lingeringPotionName,
@@ -169,22 +168,22 @@ public class JLang implements Cloneable {
                 .lingeringPotion(id, lingeringPotionName).tippedArrow(id, tippedArrowName);
     }
 
-    public JLang tippedArrow(Identifier id, String name) {
+    public JLang tippedArrow(ResourceLocation id, String name) {
         this.lang.put("item.minecraft.tipped_arrow.effect." + id.getPath(), name);
         return this;
     }
 
-    public JLang lingeringPotion(Identifier id, String name) {
+    public JLang lingeringPotion(ResourceLocation id, String name) {
         this.lang.put("item.minecraft.lingering_potion.effect." + id.getPath(), name);
         return this;
     }
 
-    public JLang splashPotion(Identifier id, String name) {
+    public JLang splashPotion(ResourceLocation id, String name) {
         this.lang.put("item.minecraft.splash_potion.effect." + id.getPath(), name);
         return this;
     }
 
-    public JLang drinkablePotion(Identifier id, String name) {
+    public JLang drinkablePotion(ResourceLocation id, String name) {
         this.lang.put("item.minecraft.potion.effect." + id.getPath(), "Potion of " + name);
         return this;
     }
@@ -192,7 +191,7 @@ public class JLang implements Cloneable {
     /**
      * Like {@link JLang#drinkablePotion}, but it adds in the "Potion of" automatically.
      */
-    public JLang drinkablePotionOf(Identifier id, String effectName) {
+    public JLang drinkablePotionOf(ResourceLocation id, String effectName) {
         this.lang.put("item.minecraft.potion.effect." + id.getPath(), "Potion of " + effectName);
         return this;
     }
@@ -200,7 +199,7 @@ public class JLang implements Cloneable {
     /**
      * Like {@link JLang#splashPotion}, but it adds in the "Splash Potion of" automatically.
      */
-    public JLang splashPotionOf(Identifier id, String effectName) {
+    public JLang splashPotionOf(ResourceLocation id, String effectName) {
         this.lang.put("item.minecraft.splash_potion.effect." + id.getPath(), "Splash Potion of " + effectName);
         return this;
     }
@@ -208,7 +207,7 @@ public class JLang implements Cloneable {
     /**
      * Like {@link JLang#lingeringPotion}, but it adds in the "Lingering Potion of" automatically.
      */
-    public JLang lingeringPotionOf(Identifier id, String effectName) {
+    public JLang lingeringPotionOf(ResourceLocation id, String effectName) {
         this.lang.put("item.minecraft.lingering_potion.effect." + id.getPath(), "Lingering Potion of " + effectName);
         return this;
     }
@@ -216,12 +215,12 @@ public class JLang implements Cloneable {
     /**
      * Like {@link JLang#tippedArrow}, but it adds in the "Tipped Arrow of" automatically.
      */
-    public JLang tippedArrowOf(Identifier id, String effectName) {
+    public JLang tippedArrowOf(ResourceLocation id, String effectName) {
         this.lang.put("item.minecraft.tipped_arrow.effect." + id.getPath(), "Tipped Arrow of " + effectName);
         return this;
     }
 
-    public JLang biome(Identifier id, String name) {
+    public JLang biome(ResourceLocation id, String name) {
         return this.object("biome", id, name);
     }
 

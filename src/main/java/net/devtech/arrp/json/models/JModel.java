@@ -5,9 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import net.devtech.arrp.json.loot.JCondition;
-
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 
 /**
  * a block/item model, static import this class
@@ -49,7 +48,7 @@ public class JModel implements Cloneable {
 		return model;
 	}
 
-	public static JModel modelKeepElements(Identifier identifier) {
+	public static JModel modelKeepElements(ResourceLocation identifier) {
 		return modelKeepElements(identifier.toString());
 	}
 
@@ -63,7 +62,7 @@ public class JModel implements Cloneable {
 		return model;
 	}
 
-	public static JOverride override(JCondition predicate, Identifier model) {
+	public static JOverride override(JCondition predicate, ResourceLocation model) {
 		return new JOverride(predicate, model.toString());
 	}
 
@@ -71,7 +70,7 @@ public class JModel implements Cloneable {
 		return new JCondition(null);
 	}
 
-	public static JModel model(Identifier identifier) {
+	public static JModel model(ResourceLocation identifier) {
 		return model(identifier.toString());
 	}
 

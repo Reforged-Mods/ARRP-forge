@@ -23,10 +23,9 @@ import net.devtech.arrp.json.models.JModel;
 import net.devtech.arrp.json.recipe.JRecipe;
 import net.devtech.arrp.json.tags.JTag;
 import net.devtech.arrp.util.CallableFunction;
-
-import net.minecraft.resource.ResourcePack;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackType;
 
 /**
  * a resource pack who's assets and data are evaluated at runtime
@@ -34,29 +33,29 @@ import net.minecraft.util.Identifier;
  * remember to register it!
  * @see RRPEvent
  */
-public interface RuntimeResourcePack extends ResourcePack {
+public interface RuntimeResourcePack extends PackResources {
 	/**
 	 * create a new runtime resource pack with the default supported resource pack version
 	 */
 	static RuntimeResourcePack create(String id) {
-		return new RuntimeResourcePackImpl(Identifier.tryParse(id));
+		return new RuntimeResourcePackImpl(ResourceLocation.tryParse(id));
 	}
 
 	static RuntimeResourcePack create(String id, int version) {
-		return new RuntimeResourcePackImpl(Identifier.tryParse(id), version);
+		return new RuntimeResourcePackImpl(ResourceLocation.tryParse(id), version);
 	}
 
-	static RuntimeResourcePack create(Identifier id) {
+	static RuntimeResourcePack create(ResourceLocation id) {
 		return new RuntimeResourcePackImpl(id);
 	}
 
-	static RuntimeResourcePack create(Identifier id, int version) {
+	static RuntimeResourcePack create(ResourceLocation id, int version) {
 		return new RuntimeResourcePackImpl(id, version);
 	}
 
-	static Identifier id(String string) {return Identifier.tryParse(string);}
+	static ResourceLocation id(String string) {return ResourceLocation.tryParse(string);}
 
-	static Identifier id(String namespace, String string) {return Identifier.of(namespace, string);}
+	static ResourceLocation id(String namespace, String string) {return ResourceLocation.fromNamespaceAndPath(namespace, string);}
 
 
 	/**
@@ -69,7 +68,7 @@ public interface RuntimeResourcePack extends ResourcePack {
 	 * @param target the input stream of the original texture
 	 * @param pixel the pixel recolorer
 	 */
-	void addRecoloredImage(Identifier identifier, InputStream target, IntUnaryOperator pixel);
+	void addRecoloredImage(ResourceLocation identifier, InputStream target, IntUnaryOperator pixel);
 
 	/**
 	 * add a lang file for the given language
@@ -78,36 +77,36 @@ public interface RuntimeResourcePack extends ResourcePack {
 	 * <p>
 	 * ex. addLang(MyMod.id("en_us"), lang().translate("something.something", "test"))
 	 */
-	byte[] addLang(Identifier identifier, JLang lang);
+	byte[] addLang(ResourceLocation identifier, JLang lang);
 
 	/**
 	 * Multiple calls to this method with the same identifier will merge them into one lang file
 	 */
-	void mergeLang(Identifier identifier, JLang lang);
+	void mergeLang(ResourceLocation identifier, JLang lang);
 
 	/**
 	 * adds a loot table
 	 */
-	byte[] addLootTable(Identifier identifier, JLootTable table);
+	byte[] addLootTable(ResourceLocation identifier, JLootTable table);
 
 	/**
 	 * adds an async resource, this is evaluated off-thread, this does not hold all resource retrieval unlike
 	 *
 	 * @see #async(Consumer)
 	 */
-	Future<byte[]> addAsyncResource(ResourceType type,
-			Identifier identifier,
-			CallableFunction<Identifier, byte[]> data);
+	Future<byte[]> addAsyncResource(PackType type,
+			ResourceLocation identifier,
+			CallableFunction<ResourceLocation, byte[]> data);
 
 	/**
 	 * add a resource that is lazily evaluated
 	 */
-	void addLazyResource(ResourceType type, Identifier path, BiFunction<RuntimeResourcePack, Identifier, byte[]> data);
+	void addLazyResource(PackType type, ResourceLocation path, BiFunction<RuntimeResourcePack, ResourceLocation, byte[]> data);
 
 	/**
 	 * add a raw resource
 	 */
-	byte[] addResource(ResourceType type, Identifier path, byte[] data);
+	byte[] addResource(PackType type, ResourceLocation path, byte[] data);
 
 	/**
 	 * adds an async root resource, this is evaluated off-thread, this does not hold all resource retrieval unlike
@@ -135,58 +134,58 @@ public interface RuntimeResourcePack extends ResourcePack {
 	/**
 	 * add a clientside resource
 	 */
-	byte[] addAsset(Identifier path, byte[] data);
+	byte[] addAsset(ResourceLocation path, byte[] data);
 
 	/**
 	 * add a serverside resource
 	 */
-	byte[] addData(Identifier path, byte[] data);
+	byte[] addData(ResourceLocation path, byte[] data);
 
 	/**
 	 * add a model, Items should go in item/... and Blocks in block/... ex. mymod:items/my_item ".json" is
 	 * automatically
 	 * appended to the path
 	 */
-	byte[] addModel(JModel model, Identifier path);
+	byte[] addModel(JModel model, ResourceLocation path);
 
 	/**
 	 * adds a blockstate json
 	 * <p>
 	 * ".json" is automatically appended to the path
 	 */
-	byte[] addBlockState(JState state, Identifier path);
+	byte[] addBlockState(JState state, ResourceLocation path);
 
 	/**
 	 * adds a texture png
 	 * <p>
 	 * ".png" is automatically appended to the path
 	 */
-	byte[] addTexture(Identifier id, BufferedImage image);
+	byte[] addTexture(ResourceLocation id, BufferedImage image);
 
 	/**
 	 * adds an animation json
 	 * <p>
 	 * ".png.mcmeta" is automatically appended to the path
 	 */
-	byte[] addAnimation(Identifier id, JAnimation animation);
+	byte[] addAnimation(ResourceLocation id, JAnimation animation);
 
 	/**
 	 * add a tag under the id
 	 * <p>
 	 * ".json" is automatically appended to the path
 	 */
-	byte[] addTag(Identifier id, JTag tag);
+	byte[] addTag(ResourceLocation id, JTag tag);
 
 	/**
 	 * add a recipe
 	 * <p>
 	 * ".json" is automatically appended to the path
 	 *
-	 * @param id the {@linkplain Identifier} identifier of the recipe and that represents its directory
+	 * @param id the {@linkplain ResourceLocation} identifier of the recipe and that represents its directory
 	 * @param recipe the recipe to add
 	 * @return the new resource
 	 */
-	byte[] addRecipe(Identifier id, JRecipe recipe);
+	byte[] addRecipe(ResourceLocation id, JRecipe recipe);
 
 	/**
 	 * invokes the action on the RRP executor, RRPs are thread-safe you can create expensive assets here, all resources
@@ -195,7 +194,7 @@ public interface RuntimeResourcePack extends ResourcePack {
 	 * <p>
 	 * calling an this function from itself will result in a infinite loop
 	 *
-	 * @see #addAsyncResource(ResourceType, Identifier, CallableFunction)
+	 * @see #addAsyncResource(PackType, ResourceLocation, CallableFunction)
 	 */
 	Future<?> async(Consumer<RuntimeResourcePack> action);
 
@@ -224,7 +223,7 @@ public interface RuntimeResourcePack extends ResourcePack {
 	 * forcefully dump all assets and data into `namespace;path/`, useful for debugging
 	 */
 	default void dump(Path path) {
-		String id = this.getInfo().id();
+		String id = this.location().id();
 		Path folder = path.resolve(id);
 		this.dumpDirect(folder);
 	}

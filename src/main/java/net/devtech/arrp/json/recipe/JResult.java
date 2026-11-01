@@ -1,7 +1,7 @@
 package net.devtech.arrp.json.recipe;
 
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.Item;
 
 public class JResult {
 	protected final String item;
@@ -11,7 +11,7 @@ public class JResult {
 	}
 
 	public static JResult item(final Item item) {
-		return result(Registries.ITEM.getId(item).toString());
+		return result(BuiltInRegistries.ITEM.getKey(item).toString());
 	}
 
 	public static JResult result(final String id) {
@@ -19,7 +19,7 @@ public class JResult {
 	}
 
 	public static JStackedResult itemStack(final Item item, final int count) {
-		return stackedResult(Registries.ITEM.getId(item).toString(), count);
+		return stackedResult(BuiltInRegistries.ITEM.getKey(item).toString(), count);
 	}
 
 	public static JStackedResult stackedResult(final String id, final int count) {

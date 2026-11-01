@@ -5,14 +5,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.math.Direction;
 
 public final class JVariant implements Cloneable {
 	private final Map<String, List<JBlockModel>> models = new HashMap<>();
@@ -51,8 +49,8 @@ public final class JVariant implements Cloneable {
 	 *
 	 * @see Direction
 	 */
-	public JVariant put(String property, StringIdentifiable value, JBlockModel model) {
-		return this.put(property + '=' + value.asString(), model);
+	public JVariant put(String property, StringRepresentable value, JBlockModel model) {
+		return this.put(property + '=' + value.getSerializedName(), model);
 	}
 
 	/**
