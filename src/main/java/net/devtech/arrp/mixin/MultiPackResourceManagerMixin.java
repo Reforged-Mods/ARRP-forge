@@ -11,6 +11,7 @@ import net.devtech.arrp.ARRP;
 import net.devtech.arrp.api.RRPEvent;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +29,8 @@ public abstract class MultiPackResourceManagerMixin {
 		ARRP_LOGGER.info("ARRP register - before vanilla");
 		RRPEvent.BeforeVanilla beforeVanilla = new RRPEvent.BeforeVanilla(Lists.reverse(copy), type);
 		ARRP.EVENT_BUS.post(beforeVanilla);
-		OptionalInt firstPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).findFirst();
-		OptionalInt lastPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i).getClass().getName().equals("net.minecraftforge.resource.ResourcePackLoader$1")).reduce((first, second) -> second);
+		OptionalInt firstPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i) instanceof PathPackResources).findFirst();
+		OptionalInt lastPackIndex = IntStream.range(0, copy.size()).filter(i -> copy.get(i) instanceof PathPackResources).reduce((first, second) -> second);
 		if (firstPackIndex.isPresent() && lastPackIndex.isPresent()) {
 			ARRP_LOGGER.info("ARRP register - between vanilla and mods");
 			int initialCopyLength = copy.size();
